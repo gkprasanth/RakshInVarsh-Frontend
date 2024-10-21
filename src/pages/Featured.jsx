@@ -40,7 +40,7 @@ import {
     const bgColor = useColorModeValue('white', 'gray.800'); // Adjust background based on theme
   
     return (
-      <Box id='about' bg="gray.50" py={{ base: 8, md: 12 }}>
+      <Box className='cursor-pointer' id='about' bg="gray.50" py={{ base: 8, md: 12 }}>
         <Text
           className="text-purple-700"
           fontWeight="bold"
