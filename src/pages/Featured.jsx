@@ -40,7 +40,16 @@ import {
     const bgColor = useColorModeValue('white', 'gray.800'); // Adjust background based on theme
   
     return (
-      <Box bg="gray.50" py={{ base: 8, md: 12 }}>
+      <Box id='about' bg="gray.50" py={{ base: 8, md: 12 }}>
+        <Text
+          className="text-purple-700"
+          fontWeight="bold"
+          textAlign="center"
+          mb={5}
+          fontSize={{ base: '3xl', md: '5xl' }} // Responsive font size
+        >
+          WHO CHOOSE US
+        </Text>
         <Box maxW="6xl" mx="auto" px={{ base: 4, md: 6 }}>
           <SimpleGrid
             columns={{ base: 1, sm: 2, md: 3 }}
@@ -56,6 +65,7 @@ import {
                 overflow="hidden"
                 transition="transform 0.3s"
                 _hover={{ transform: 'scale(1.05)' }} // Subtle hover effect
+                role="group" // Accessibility: Indicates an interactive element
               >
                 <CardBody p={6}>
                   <Image
@@ -66,12 +76,23 @@ import {
                     objectFit="cover"
                     maxH="200px"
                     w="full"
+                    loading="lazy" // Lazy loading for performance
                   />
                   <Stack spacing={4}>
-                    <Heading size="lg" fontWeight="bold" color="gray.700"textAlign="center">
+                    <Heading
+                      size="lg"
+                      fontWeight="bold"
+                      color="gray.700"
+                      textAlign="center"
+                      _groupHover={{ color: 'purple.600' }} // Change color on hover
+                    >
                       {card.heading}
                     </Heading>
-                    <Text fontSize="md" textAlign="justify" color="gray.600">
+                    <Text
+                      fontSize="md"
+                      textAlign="justify"
+                      color="gray.600"
+                    >
                       {card.description}
                     </Text>
                   </Stack>

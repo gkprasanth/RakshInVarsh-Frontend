@@ -17,14 +17,18 @@ import Home from './pages/Home'
 import Footer from "./pages/Footer"
 
 import {BrowserRouter, Route, Routes} from "react-router-dom"
+import Renting from './pages/Renting'
+import Navbar from './pages/Navbar'
  
 function App() {
  
 
   return (
    <BrowserRouter>
+   <Navbar/>
      <Routes>
       <Route  path='/' element={<Home/>} />
+      <Route path='/rent' element={<Renting/>} />
     </Routes>
 
     <Footer/>
