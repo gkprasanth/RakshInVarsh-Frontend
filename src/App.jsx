@@ -24,8 +24,7 @@ function App() {
 
   return (
    <BrowserRouter>
-   <Navbar/>
-    <Routes>
+     <Routes>
       <Route  path='/' element={<Home/>} />
     </Routes>
 
