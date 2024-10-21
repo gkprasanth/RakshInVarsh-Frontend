@@ -68,7 +68,7 @@ import {
                     w="full"
                   />
                   <Stack spacing={4}>
-                    <Heading size="lg" fontWeight="bold" textAlign="center">
+                    <Heading size="lg" fontWeight="bold" color="gray.700"textAlign="center">
                       {card.heading}
                     </Heading>
                     <Text fontSize="md" textAlign="justify" color="gray.600">

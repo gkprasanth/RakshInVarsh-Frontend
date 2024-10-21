@@ -17,8 +17,7 @@ import Home from './pages/Home'
 import Footer from "./pages/Footer"
 
 import {BrowserRouter, Route, Routes} from "react-router-dom"
-import Navbar from './pages/Navbar'
-
+ 
 function App() {
  
 
