@@ -27,9 +27,10 @@ export default function Navbar() {
   return (
     <Box px={4} py={6} bg={useColorModeValue('#3584e4', 'gray.800')} boxShadow="md">
       <Flex h={16} alignItems="center" justifyContent={{ base: 'center', md: 'space-between' }}>
-        <Text fontSize="2xl" fontWeight="bold" color="white">
-          RakshInVarsh
-        </Text>
+        <Link href='/' >
+          <Text fontSize="2xl" fontWeight="bold" color="white">
+            RakshInVarsh
+          </Text></Link>
 
         <HStack spacing={8} alignItems="center">
           <HStack as="nav" spacing={6} display={{ base: 'none', md: 'flex' }}>
