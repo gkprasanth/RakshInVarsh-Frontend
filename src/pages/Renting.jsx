@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { Box, Heading, VStack, Text, Button, useToast, Input, Divider, HStack } from '@chakra-ui/react';
+import { Box, Heading, VStack, Text, Button, useToast, Input, Divider } from '@chakra-ui/react';
 import DropDown from './DropDown';
+import axios from 'axios';
+import { loadStripe } from '@stripe/stripe-js';
+import Helmet from 'react-helmet';
+import PaymentModal from './PaymentModal'; // Import the PaymentModal
 
-// Sample locations for the "From" and "To" selection
-const optionsLocations = [
+const optionsTo = [
     { label: 'Block 1', value: 'block_1' },
     { label: 'Block 2', value: 'block_2' },
     { label: 'Bus Ground', value: 'bus_ground' },
@@ -11,44 +14,88 @@ const optionsLocations = [
     { label: 'Gate 2', value: 'gate_2' },
 ];
 
-const hourlyRate = 30; // ₹30 per hour
-
 const Renting = () => {
-    const [fromLocation, setFromLocation] = useState('');
-    const [toLocation, setToLocation] = useState('');
+    const [currentLocation] = useState('Block 1');
+    const [selectedToLocation, setSelectedToLocation] = useState('');
+    const [paymentAmount, setPaymentAmount] = useState(30);
     const [hours, setHours] = useState('');
-    const [totalAmount, setTotalAmount] = useState(0);
-    const [isPaymentVisible, setPaymentVisible] = useState(false);
+    const [isModalOpen, setModalOpen] = useState(false); // State for modal
     const toast = useToast();
+    const stripePromise = loadStripe('YOUR_PUBLISHABLE_KEY_HERE');
 
-    // Handle location selection
-    const handleFromLocationSelect = (event) => setFromLocation(event.target.value);
-    const handleToLocationSelect = (event) => setToLocation(event.target.value);
-
-    // Handle hour change and calculate total
     const handleHoursChange = (event) => {
         const value = event.target.value;
-        setHours(value);
-        setTotalAmount(value * hourlyRate); // Calculate total amount
+        if (!isNaN(value) && Number(value) >= 1) {
+            const selectedHours = Number(value);
+            setHours(selectedHours);
+            setPaymentAmount(selectedHours * 3000);
+        } else {
+            setHours('');
+            setPaymentAmount(30);
+        }
     };
 
-    // Handle payment submission
-    const handlePayment = () => {
-        // Mock payment process
-        toast({
-            title: "Payment Successful",
-            description: `You've rented the umbrella from ${fromLocation} to ${toLocation} for ${hours} hour(s) at ₹${totalAmount}.`,
-            status: "success",
-            duration: 5000,
-            isClosable: true,
-        });
+    const handleLocationSelect = (event) => {
+        setSelectedToLocation(event.target.value);
     };
+
+    const handlePayment = async () => {
+        if (!selectedToLocation || !hours || Number(hours) < 1) {
+            toast({
+                title: "Error",
+                description: "Please fill out all fields correctly.",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+            });
+            return;
+        }
+        
+        const stripe = await stripePromise;
+
+        try {
+            const response = await axios.post('http://localhost:5000/api/booking/book', {
+                fromLocation: currentLocation,
+                toLocation: selectedToLocation,
+                hours: hours,
+            });
+
+            if (response.data) {
+                const { sessionId } = response.data; 
+                const { error } = await stripe.redirectToCheckout({ sessionId });
+
+                if (error) {
+                    toast({
+                        title: "Error",
+                        description: "An error occurred during the payment process.",
+                        status: "error",
+                        duration: 5000,
+                        isClosable: true,
+                    });
+                }
+            }
+        } catch (error) {
+            console.error("Error during payment:", error);
+            toast({
+                title: "Error",
+                description: "An error occurred while processing your payment.",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
+
+    const handleOpenModal = () => setModalOpen(true);
+    const handleCloseModal = () => setModalOpen(false);
 
     return (
-        <Box className='w-[100vw] p-10' bg="gray.100" minH="80vh" display="flex" justifyContent="center" alignItems="center">
-            <HStack>
+        <Box className='w-[100vw] p-10' bg="gray.100" minH="100vh" display="flex" justifyContent="center" alignItems="center">
+            <Helmet>
+                <meta httpEquiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+            </Helmet>
             <Box
-                maxW="100%"
+                maxW="500px"
                 w="100%"
                 py={10}
                 px={8}
@@ -62,69 +109,63 @@ const Renting = () => {
                 </Heading>
 
                 <VStack spacing={6} align="stretch">
-                    {/* Select 'From' Location */}
                     <Box textAlign="left">
                         <Text fontSize="md" color="gray.600" mb={2}>
-                            From Location:
+                            Current Umbrella Location:
                         </Text>
-                        <DropDown placeholder="Select from location" options={optionsLocations} onChange={handleFromLocationSelect} />
+                        <Text fontSize="lg" fontWeight="bold" color="teal.500">
+                            {currentLocation}
+                        </Text>
                     </Box>
 
                     <Divider />
 
-                    {/* Select 'To' Location */}
                     <Box textAlign="left">
                         <Text fontSize="md" color="gray.600" mb={2}>
-                            To Location:
+                            Select your drop-off location:
                         </Text>
-                        <DropDown placeholder="Select to location" options={optionsLocations} onChange={handleToLocationSelect} />
+                        <DropDown placeholder="Select drop-off" options={optionsTo} onChange={handleLocationSelect} />
                     </Box>
 
                     <Divider />
 
-                    {/* Enter Hours */}
-                    <Box textAlign="left">
-                        <Text fontSize="md" color="gray.600" mb={2}>
-                            Number of Hours:
+                    <VStack spacing={4} align="stretch" mt={4}>
+                        <Text fontSize="md" color="gray.600">
+                            Booking Hours:
                         </Text>
                         <Input
                             placeholder="Enter number of hours"
                             value={hours}
                             onChange={handleHoursChange}
                             type="number"
+                            min={1}
                             focusBorderColor="teal.400"
                         />
-                    </Box>
 
-                    <Divider />
-
-                    {/* Total Amount */}
-                    <Box textAlign="left">
-                        <Text fontSize="md" color="gray.600" mb={2}>
-                            Total Amount: ₹{totalAmount}
+                        <Text fontSize="lg" fontWeight="bold" color="teal.500">
+                            Total Amount: ₹{paymentAmount / 100} (30 INR per hour)
                         </Text>
-                    </Box>
 
-                    <Divider />
-
-                    {/* Payment Button */}
-                    {fromLocation && toLocation && hours > 0 && (
                         <Button
                             colorScheme="teal"
                             size="lg"
                             w="full"
-                            onClick={handlePayment}
+                            onClick={handleOpenModal} // Open modal on button click
+                            isDisabled={!selectedToLocation || !hours || Number(hours) < 1} // Validations
                         >
-                            Pay ₹{totalAmount} & Rent Umbrella
+                            Pay & Rent Umbrella
                         </Button>
-                    )}
+                    </VStack>
                 </VStack>
             </Box>
 
-            <Box>
-                dvd
-            </Box>
-            </HStack>
+            {/* Payment Modal */}
+            <PaymentModal
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                handlePayment={handlePayment}
+                paymentAmount={paymentAmount}
+            />
         </Box>
     );
 };

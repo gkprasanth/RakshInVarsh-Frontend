@@ -1,9 +1,9 @@
 import { Select } from '@chakra-ui/react';
 import React from 'react';
 
-const DropDown = ({ placeholder, options }) => {
+const DropDown = ({ placeholder, options, onChange }) => {
   return (
-    <Select placeholder={placeholder}>
+    <Select placeholder={placeholder} onChange={onChange}>
       {options.map((option, index) => (
         <option key={index} value={option.value}>
           {option.label}
@@ -12,5 +12,6 @@ const DropDown = ({ placeholder, options }) => {
     </Select>
   );
 };
+
 
 export default DropDown;
