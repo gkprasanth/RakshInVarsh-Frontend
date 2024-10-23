@@ -48,7 +48,7 @@ import {
           mb={5}
           fontSize={{ base: '3xl', md: '5xl' }} // Responsive font size
         >
-          WHO CHOOSE US
+          WHY CHOOSE US
         </Text>
         <Box maxW="6xl" mx="auto" px={{ base: 4, md: 6 }}>
           <SimpleGrid
