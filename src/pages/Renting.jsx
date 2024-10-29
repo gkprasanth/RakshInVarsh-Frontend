@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Heading, VStack, Text, Button, useToast, Input, Divider } from '@chakra-ui/react';
 import DropDown from './DropDown';
-import axios from 'axios';
-import { loadStripe } from '@stripe/stripe-js';
-import Helmet from 'react-helmet';
-import PaymentModal from './PaymentModal'; // Import the PaymentModal
 
 const optionsTo = [
     { label: 'Block 1', value: 'block_1' },
@@ -17,21 +13,19 @@ const optionsTo = [
 const Renting = () => {
     const [currentLocation] = useState('Block 1');
     const [selectedToLocation, setSelectedToLocation] = useState('');
-    const [paymentAmount, setPaymentAmount] = useState(30);
     const [hours, setHours] = useState('');
-    const [isModalOpen, setModalOpen] = useState(false); // State for modal
+    const [otp, setOtp] = useState('');
+    const [generatedOtp, setGeneratedOtp] = useState('');
+    const [mobileNumber, setMobileNumber] = useState('');
+    const [isOtpSent, setOtpSent] = useState(false);
     const toast = useToast();
-    const stripePromise = loadStripe('YOUR_PUBLISHABLE_KEY_HERE');
 
     const handleHoursChange = (event) => {
         const value = event.target.value;
         if (!isNaN(value) && Number(value) >= 1) {
-            const selectedHours = Number(value);
-            setHours(selectedHours);
-            setPaymentAmount(selectedHours * 3000);
+            setHours(Number(value));
         } else {
             setHours('');
-            setPaymentAmount(30);
         }
     };
 
@@ -39,8 +33,12 @@ const Renting = () => {
         setSelectedToLocation(event.target.value);
     };
 
-    const handlePayment = async () => {
-        if (!selectedToLocation || !hours || Number(hours) < 1) {
+    const generateOtp = () => {
+        return Math.floor(1000 + Math.random() * 9000).toString(); // Generates a 4-digit OTP
+    };
+
+    const handleSendOtp = () => {
+        if (!selectedToLocation || !hours || !mobileNumber || Number(hours) < 1) {
             toast({
                 title: "Error",
                 description: "Please fill out all fields correctly.",
@@ -50,35 +48,34 @@ const Renting = () => {
             });
             return;
         }
-        
-        const stripe = await stripePromise;
 
-        try {
-            const response = await axios.post('http://localhost:5000/api/booking/book', {
-                fromLocation: currentLocation,
-                toLocation: selectedToLocation,
-                hours: hours,
+        const otp = generateOtp();
+        setGeneratedOtp(otp);
+        setOtpSent(true); // OTP has been "sent"
+        toast({
+            title: "OTP Sent",
+            description: `Your OTP is ${otp}`, // Display OTP here for demo purposes
+            status: "success",
+            duration: 5000,
+            isClosable: true,
+        });
+    };
+
+    const handleOtpVerification = () => {
+        if (otp === generatedOtp) {
+            toast({
+                title: "Verified",
+                description: "OTP verified successfully!",
+                status: "success",
+                duration: 5000,
+                isClosable: true,
             });
-
-            if (response.data) {
-                const { sessionId } = response.data; 
-                const { error } = await stripe.redirectToCheckout({ sessionId });
-
-                if (error) {
-                    toast({
-                        title: "Error",
-                        description: "An error occurred during the payment process.",
-                        status: "error",
-                        duration: 5000,
-                        isClosable: true,
-                    });
-                }
-            }
-        } catch (error) {
-            console.error("Error during payment:", error);
+            setOtp(''); // Clear OTP input
+            setOtpSent(false); // Reset OTP state
+        } else {
             toast({
                 title: "Error",
-                description: "An error occurred while processing your payment.",
+                description: "Invalid OTP. Please try again.",
                 status: "error",
                 duration: 5000,
                 isClosable: true,
@@ -86,14 +83,8 @@ const Renting = () => {
         }
     };
 
-    const handleOpenModal = () => setModalOpen(true);
-    const handleCloseModal = () => setModalOpen(false);
-
     return (
         <Box className='w-[100vw] p-10' bg="gray.100" minH="100vh" display="flex" justifyContent="center" alignItems="center">
-            <Helmet>
-                <meta httpEquiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
-            </Helmet>
             <Box
                 maxW="500px"
                 w="100%"
@@ -142,30 +133,51 @@ const Renting = () => {
                             focusBorderColor="teal.400"
                         />
 
-                        <Text fontSize="lg" fontWeight="bold" color="teal.500">
-                            Total Amount: ₹{paymentAmount / 100} (30 INR per hour)
+                        <Text fontSize="md" color="gray.600">
+                            Mobile Number:
                         </Text>
+                        <Input
+                            placeholder="Enter your mobile number"
+                            value={mobileNumber}
+                            onChange={(e) => setMobileNumber(e.target.value)}
+                            type="tel"
+                            focusBorderColor="teal.400"
+                        />
 
                         <Button
                             colorScheme="teal"
                             size="lg"
                             w="full"
-                            onClick={handleOpenModal} // Open modal on button click
-                            isDisabled={!selectedToLocation || !hours || Number(hours) < 1} // Validations
+                            onClick={handleSendOtp}
+                            isDisabled={!selectedToLocation || !hours || Number(hours) < 1 || !mobileNumber}
                         >
-                            Pay & Rent Umbrella
+                            Send OTP
                         </Button>
+
+                        {isOtpSent && (
+                            <>
+                                <Input
+                                    placeholder="Enter OTP"
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value)}
+                                    type="text"
+                                    focusBorderColor="teal.400"
+                                    mt={4}
+                                />
+                                <Button
+                                    colorScheme="blue"
+                                    size="lg"
+                                    w="full"
+                                    onClick={handleOtpVerification}
+                                    mt={2}
+                                >
+                                    Verify OTP
+                                </Button>
+                            </>
+                        )}
                     </VStack>
                 </VStack>
             </Box>
-
-            {/* Payment Modal */}
-            <PaymentModal
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}
-                handlePayment={handlePayment}
-                paymentAmount={paymentAmount}
-            />
         </Box>
     );
 };

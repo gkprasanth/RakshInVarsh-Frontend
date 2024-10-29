@@ -62,12 +62,34 @@ import {
               <VStack spacing={2} alignItems="flex-start" color="gray.600">
                 <HStack>
                   <BsTelephone />
-                  <Text>+1-234-567-890</Text>
+                  <Text>Rahul Sohan</Text>
                 </HStack>
+
                 <HStack>
-                  <FaEnvelope />
-                  <Text>support@example.com</Text>
+                  <BsTelephone />
+                  <Text>Shivesh</Text>
                 </HStack>
+
+                <HStack>
+                  <BsTelephone />
+                  <Text>Venkat</Text>
+                </HStack>
+
+                <HStack>
+                  <BsTelephone />
+                  <Text>Manoj Kumar</Text>
+                </HStack>
+
+                <HStack>
+                  <BsTelephone />
+                  <Text>Rohitha </Text>
+                </HStack>
+
+                <HStack>
+                  <BsTelephone />
+                  <Text>Amrutha</Text>
+                </HStack>
+                 
               </VStack>
             </VStack>
           </HStack>

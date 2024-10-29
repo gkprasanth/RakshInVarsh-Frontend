@@ -10,9 +10,9 @@ import {
     useColorModeValue,
   } from '@chakra-ui/react';
   
-  import card1 from '../assets/card1.jpg';
-  import card2 from '../assets/card2.jpg';
-  import card3 from '../assets/card3.jpg';
+  import card1 from '../assets/card1.avif';
+  import card2 from '../assets/card2.avif';
+  import card3 from '../assets/card3.avif';
   
   // Array of card data
   const cardData = [
@@ -25,7 +25,7 @@ import {
     {
       heading: 'Affordable and Flexible Rentals',
       description:
-        'We know student budgets are tight! Our umbrella rentals start as low as $0.50 per hour or $2 per day. Enjoy the flexibility of returning your umbrella at any kiosk on campus—no extra hassle.',
+        'We know student budgets are tight! Our umbrella rentals start as low as 30 rupees per hour. Enjoy the flexibility of returning your umbrella at any kiosk on campus—no extra hassle.',
       image: card2,
     },
     {

@@ -1,5 +1,5 @@
 import React from 'react';
-import heroImg from '../assets/home.jpeg';
+import heroImg from '../assets/hero.avif';
 import FeatureHighlights from './Featured';
 import { Link } from 'react-router-dom';
 
@@ -23,12 +23,13 @@ const Home = () => (
           Convenient, affordable umbrella rentals from kiosks near you. Stay dry and stylish, no matter the weather.
         </p>
         <div className="mt-4 md:mt-6">
-          <Link to={'/rent'} >
-          <button className="bg-purple-600 text-[white] px-5 md:px-8 py-2 md:py-3 rounded-full shadow-lg 
-                             hover:bg-purple-700 transition-transform transform hover:scale-105">
-            Start Renting Now
-          </button>
+          <Link to={'/payment'}> {/* Change route from '/rent' to '/payment' */}
+            <button className="bg-purple-600 text-[white] px-5 md:px-8 py-2 md:py-3 rounded-full shadow-lg 
+                     hover:bg-purple-700 transition-transform transform hover:scale-105">
+              Start Renting Now
+            </button>
           </Link>
+
         </div>
       </div>
     </div>
