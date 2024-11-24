@@ -37,9 +37,7 @@ import {
               </Text>
               <VStack spacing={2} alignItems="flex-start" color="gray.600">
                 <Link>About Us</Link>
-                <Link>Careers</Link>
-                <Link>Blog</Link>
-                <Link>Changelog</Link>
+                 
               </VStack>
             </VStack>
   
