@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Heading, VStack, Text, Button, useToast, Input, Divider, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, ModalFooter } from '@chakra-ui/react';
 import DropDown from './DropDown';
+import GooglePayButton from '@google-pay/button-react';
 
 const optionsFrom = [
     { label: 'Block 1', value: 'block_1' },
@@ -289,7 +290,7 @@ const Renting = () => {
                         <Button variant="ghost" onClick={() => setShowModal(false)}>
                             Close
                         </Button>
-                        <Button
+                        {/* <Button
                             colorScheme="teal"
                             ml={3}
                             onClick={handleFakePayment}
@@ -297,7 +298,45 @@ const Renting = () => {
                             isDisabled={paymentProcessed}
                         >
                             Confirm Payment
-                        </Button>
+                        </Button> */}
+
+                        <GooglePayButton
+                            environment="TEST"
+                            paymentRequest={{
+                                apiVersion: 2,
+                                apiVersionMinor: 0,
+                                allowedPaymentMethods: [
+                                    {
+                                        type: 'CARD',
+                                        parameters: {
+                                            allowedAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'],
+                                            allowedCardNetworks: ['MASTERCARD', 'VISA'],
+                                        },
+                                        tokenizationSpecification: {
+                                            type: 'PAYMENT_GATEWAY',
+                                            parameters: {
+                                                gateway: 'example',
+                                                gatewayMerchantId: 'exampleGatewayMerchantId',
+                                            },
+                                        },
+                                    },
+                                ],
+                                merchantInfo: {
+                                    merchantId: '12345678901234567890',
+                                    merchantName: 'Demo Merchant',
+                                },
+                                transactionInfo: {
+                                    totalPriceStatus: 'FINAL',
+                                    totalPriceLabel: 'Total',
+                                    totalPrice: `${totalPrice}`,
+                                    currencyCode: 'INR',
+                                    countryCode: 'IN',
+                                },
+                            }}
+                            onLoadPaymentData={paymentRequest => {
+                                console.log('load payment data', paymentRequest);
+                            }}
+                        />
                     </ModalFooter>
                 </ModalContent>
             </Modal>
