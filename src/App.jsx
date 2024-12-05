@@ -23,6 +23,7 @@ import Success from './pages/Success'
 import Cancel from './pages/Cancel'
 import PaymentPage from './pages/PaymentPage'
 import AuthPage from './pages/AuthPage'
+import Test from './pages/Test'
  
 function App() {
  
@@ -37,7 +38,7 @@ function App() {
       <Route path='/rent' element={<Renting/>} />
       <Route path="/payment" element={<Renting />} />
       <Route path='/success'  element={<Success/>} />
-      <Route path='/cancel' element={<Cancel/>} />
+      <Route path='/cancel' element={<Test/>} />
     </Routes>
 
     <Footer/>

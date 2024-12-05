@@ -1,70 +1,106 @@
-import React, { useState } from 'react';
-import { Box, Heading, VStack, Text, Button, useToast, Input, Divider, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, ModalFooter } from '@chakra-ui/react';
-import DropDown from './DropDown';
-import GooglePayButton from '@google-pay/button-react';
+import React, { useState, useEffect } from "react";
+import {
+    Box,
+    Heading,
+    VStack,
+    Text,
+    Button,
+    useToast,
+    Input,
+    Divider,
+} from "@chakra-ui/react";
+import DropDown from "./DropDown"; // Ensure DropDown is correctly implemented
 
 const optionsFrom = [
-    { label: 'Block 1', value: 'block_1' },
-    { label: 'Block 2', value: 'block_2' },
-    { label: 'Bus Ground', value: 'bus_ground' },
-    { label: 'Gate 1', value: 'gate_1' },
-    { label: 'Gate 2', value: 'gate_2' },
+    { label: "Block 1", value: "block_1" },
+    { label: "Block 2", value: "block_2" },
+    { label: "Bus Ground", value: "bus_ground" },
+    { label: "Gate 1", value: "gate_1" },
+    { label: "Gate 2", value: "gate_2" },
 ];
 
 const optionsTo = [
-    { label: 'Block 1', value: 'block_1' },
-    { label: 'Block 2', value: 'block_2' },
-    { label: 'Bus Ground', value: 'bus_ground' },
-    { label: 'Gate 1', value: 'gate_1' },
-    { label: 'Gate 2', value: 'gate_2' },
+    { label: "Block 1", value: "block_1" },
+    { label: "Block 2", value: "block_2" },
+    { label: "Bus Ground", value: "bus_ground" },
+    { label: "Gate 1", value: "gate_1" },
+    { label: "Gate 2", value: "gate_2" },
 ];
 
-const RENTAL_PRICE_PER_HOUR = 10; // Example price per hour, you can modify this value
+const RENTAL_PRICE_PER_HOUR = 10;
 
 const Renting = () => {
-    const [currentLocation] = useState('Block 1');
-    const [selectedFromLocation, setSelectedFromLocation] = useState('');  // Pickup location
-    const [selectedToLocation, setSelectedToLocation] = useState('');
-    const [hours, setHours] = useState('');
-    const [otp, setOtp] = useState('');
-    const [generatedOtp, setGeneratedOtp] = useState('');
-    const [mobileNumber, setMobileNumber] = useState('');
+    const [currentLocation] = useState("Block 1");
+    const [selectedFromLocation, setSelectedFromLocation] = useState("");
+    const [selectedToLocation, setSelectedToLocation] = useState("");
+    const [hours, setHours] = useState("");
+    const [otp, setOtp] = useState("");
+    const [generatedOtp, setGeneratedOtp] = useState("");
+    const [mobileNumber, setMobileNumber] = useState("");
     const [isOtpSent, setOtpSent] = useState(false);
-    const [totalPrice, setTotalPrice] = useState(0); // State for the total price
-    const [paymentProcessed, setPaymentProcessed] = useState(false); // To track if payment has been processed
-    const [showModal, setShowModal] = useState(false); // To control the modal visibility
-    const [bankDetails, setBankDetails] = useState({
-        accountNumber: '',
-        ifscCode: '',
-        bankName: ''
-    });
+    const [totalPrice, setTotalPrice] = useState(0);
+    const [paymentProcessed, setPaymentProcessed] = useState(false);
+
     const toast = useToast();
 
-    const handleHoursChange = (event) => {
-        const value = event.target.value;
-        if (!isNaN(value) && Number(value) >= 1) {
+
+    useEffect(() => {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.async = true;
+
+        script.onload = () => {
+            console.log("Razorpay script loaded successfully.");
+        };
+
+        script.onerror = () => {
+            console.error("Failed to load Razorpay script.");
+        };
+
+        document.body.appendChild(script);
+
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, []);
+
+
+
+    const amount = 500;
+    const currency = "INR";
+    const receiptId = "qwsaq1";
+
+
+    useEffect(() => {
+        if (hours) {
+            setTotalPrice(hours * RENTAL_PRICE_PER_HOUR);
+        }
+    }, [hours]);
+
+    const handleHoursChange = (e) => {
+        const value = e.target.value;
+        if (!isNaN(value) && Number(value) > 0) {
             setHours(Number(value));
-            setTotalPrice(Number(value) * RENTAL_PRICE_PER_HOUR); // Calculate the total price based on hours
         } else {
-            setHours('');
-            setTotalPrice(0); // Reset the total price if input is invalid
+            setHours("");
+            setTotalPrice(0);
         }
     };
 
-    const handleLocationSelect = (event, locationType) => {
-        if (locationType === 'from') {
-            setSelectedFromLocation(event.target.value);
-        } else {
-            setSelectedToLocation(event.target.value);
-        }
+    const validateMobileNumber = (number) => {
+        const regex = /^[6-9]\d{9}$/;
+        return regex.test(number);
     };
 
-    const generateOtp = () => {
-        return Math.floor(1000 + Math.random() * 9000).toString(); // Generates a 4-digit OTP
-    };
+    const generateOtp = () => Math.floor(1000 + Math.random() * 9000).toString();
 
     const handleSendOtp = () => {
-        if (!selectedFromLocation || !selectedToLocation || !hours || !mobileNumber || Number(hours) < 1) {
+        if (
+            !selectedFromLocation ||
+            !selectedToLocation ||
+            !hours ||
+            !validateMobileNumber(mobileNumber)
+        ) {
             toast({
                 title: "Error",
                 description: "Please fill out all fields correctly.",
@@ -77,10 +113,10 @@ const Renting = () => {
 
         const otp = generateOtp();
         setGeneratedOtp(otp);
-        setOtpSent(true); // OTP has been "sent"
+        setOtpSent(true);
         toast({
             title: "OTP Sent",
-            description: `Your OTP is ${otp}`, // Display OTP here for demo purposes
+            description: `Your OTP is ${otp}`, // Only for demo
             status: "success",
             duration: 5000,
             isClosable: true,
@@ -90,15 +126,15 @@ const Renting = () => {
     const handleOtpVerification = () => {
         if (otp === generatedOtp) {
             toast({
-                title: "Verified",
+                title: "Success",
                 description: "OTP verified successfully!",
                 status: "success",
                 duration: 5000,
                 isClosable: true,
             });
-            setOtp(''); // Clear OTP input
-            setOtpSent(false); // Reset OTP state
-            setShowModal(true); // Show bank details modal
+            setOtp("");
+            setOtpSent(false);
+            setPaymentProcessed(true);
         } else {
             toast({
                 title: "Error",
@@ -110,43 +146,151 @@ const Renting = () => {
         }
     };
 
-    // Simulate a fake payment gateway
-    const handleFakePayment = () => {
-        if (!hours || !mobileNumber || !selectedFromLocation || !selectedToLocation || !bankDetails.accountNumber || !bankDetails.ifscCode || !bankDetails.bankName) {
+    const handlePayment = async (e) => {
+        try {
+            // Ensure paymentProcessed flag is checked before proceeding
+            if (!paymentProcessed) {
+                toast({
+                    title: "Error",
+                    description: "Please verify OTP before proceeding.",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                });
+                return;
+            }
+
+            // Fetch order details from the server
+            const response = await fetch("http://localhost:5000/order", {
+                method: "POST",
+                body: JSON.stringify({
+                    amount,  // Replace with your amount variable
+                    currency,  // Replace with your currency variable
+                    receipt: receiptId,  // Replace with your receiptId variable
+                }),
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+
+            if (!response.ok) {
+                toast({
+                    title: "Error",
+                    description: "Failed to initiate payment. Please try again.",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                });
+                return;
+            }
+
+            const order = await response.json();
+            console.log(order);
+
+            // Configure Razorpay options
+            const options = {
+                key: "rzp_test_6Q8fYAxMWNjmHG", // Replace with your Razorpay key
+                amount, // Amount is in currency subunits
+                currency,
+                name: "Acme Corp", // Your business name
+                description: "Test Transaction",
+                image: "/logo.png", // Replace with your logo URL
+                order_id: order.id, // Order ID from backend
+                handler: async function (response) {
+                    try {
+                        const body = { ...response };
+
+                        const validateRes = await fetch(
+                            "http://localhost:5000/order/validate",
+                            {
+                                method: "POST",
+                                body: JSON.stringify(body),
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                            }
+                        );
+
+                        const jsonRes = await validateRes.json();
+
+                        if (validateRes.ok) {
+                            toast({
+                                title: "Payment Successful",
+                                description: "Transaction completed successfully.",
+                                status: "success",
+                                duration: 5000,
+                                isClosable: true,
+                            });
+                            console.log("Validation response:", jsonRes);
+                        } else {
+                            toast({
+                                title: "Error",
+                                description: "Payment validation failed. Please contact support.",
+                                status: "error",
+                                duration: 5000,
+                                isClosable: true,
+                            });
+                        }
+                    } catch (error) {
+                        console.error("Error validating payment:", error);
+                        toast({
+                            title: "Error",
+                            description: "An error occurred during payment validation.",
+                            status: "error",
+                            duration: 5000,
+                            isClosable: true,
+                        });
+                    }
+                },
+                prefill: {
+                    name: "Web Dev Matrix", // Replace with customer's name
+                    email: "webdevmatrix@example.com", // Replace with customer's email
+                    contact: "9000000000", // Replace with customer's phone number
+                },
+                notes: {
+                    address: "Razorpay Corporate Office",
+                },
+                theme: {
+                    color: "#3399cc", // Theme color
+                },
+            };
+
+            const rzp1 = new window.Razorpay(options);
+            rzp1.on("payment.failed", function (response) {
+                console.error("Payment failed:", response);
+                toast({
+                    title: "Payment Failed",
+                    description: response.error.description || "An unknown error occurred.",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                });
+            });
+
+            rzp1.open();
+            e.preventDefault();
+        } catch (error) {
+            console.error("Error initiating payment:", error);
             toast({
                 title: "Error",
-                description: "Please complete all required fields before proceeding to payment.",
+                description: "An error occurred while initiating payment.",
                 status: "error",
                 duration: 5000,
                 isClosable: true,
             });
-            return;
         }
-
-        // Simulate payment processing delay
-        setTimeout(() => {
-            const confirmationCode = Math.floor(100000 + Math.random() * 900000); // 6-digit random confirmation code
-            toast({
-                title: "Payment Successful",
-                description: `Your transaction ID is ${confirmationCode}`,
-                status: "success",
-                duration: 5000,
-                isClosable: true,
-            });
-            setPaymentProcessed(true); // Mark payment as processed
-            setShowModal(false); // Close the modal after payment
-        }, 2000); // Simulate 2-second delay for payment processing
     };
 
-    const handleInputChange = (e, field) => {
-        setBankDetails((prevState) => ({
-            ...prevState,
-            [field]: e.target.value
-        }));
-    };
 
     return (
-        <Box className='w-[100vw] p-10' bg="gray.100" minH="100vh" display="flex" justifyContent="center" alignItems="center">
+        <Box
+            className="w-[100vw] p-10"
+            bg="gray.100"
+            minH="100vh"
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+        >
             <Box
                 maxW="500px"
                 w="100%"
@@ -173,175 +317,84 @@ const Renting = () => {
 
                     <Divider />
 
-                    {/* Pickup Location Dropdown */}
                     <Box textAlign="left">
                         <Text fontSize="md" color="gray.600" mb={2}>
-                            Select your pickup location:
+                            Select Pickup Location:
                         </Text>
-                        <DropDown placeholder="Select pickup location" options={optionsFrom} onChange={(e) => handleLocationSelect(e, 'from')} />
+                        <DropDown
+                            placeholder="Pickup Location"
+                            options={optionsFrom}
+                            onChange={(e) => setSelectedFromLocation(e.target.value)}
+                        />
                     </Box>
 
                     <Divider />
 
-                    {/* Drop-off Location Dropdown */}
                     <Box textAlign="left">
                         <Text fontSize="md" color="gray.600" mb={2}>
-                            Select your drop-off location:
+                            Select Drop-off Location:
                         </Text>
-                        <DropDown placeholder="Select drop-off" options={optionsTo} onChange={(e) => handleLocationSelect(e, 'to')} />
+                        <DropDown
+                            placeholder="Drop-off Location"
+                            options={optionsTo}
+                            onChange={(e) => setSelectedToLocation(e.target.value)}
+                        />
                     </Box>
 
                     <Divider />
 
                     <VStack spacing={4} align="stretch" mt={4}>
-                        <Text fontSize="md" color="gray.600">
-                            Booking Hours:
-                        </Text>
                         <Input
-                            placeholder="Enter number of hours"
+                            placeholder="Number of hours"
                             value={hours}
                             onChange={handleHoursChange}
                             type="number"
                             min={1}
                             focusBorderColor="teal.400"
                         />
-
-                        {/* Display Total Price */}
                         {hours && (
                             <Text fontSize="lg" color="teal.500" fontWeight="bold">
                                 Total Price: ₹{totalPrice}
                             </Text>
                         )}
-
-                        <Text fontSize="md" color="gray.600">
-                            Mobile Number:
-                        </Text>
                         <Input
-                            placeholder="Enter your mobile number"
+                            placeholder="Mobile Number"
                             value={mobileNumber}
                             onChange={(e) => setMobileNumber(e.target.value)}
                             type="tel"
                             focusBorderColor="teal.400"
                         />
-
-                        <Button
-                            colorScheme="teal"
-                            size="lg"
-                            w="full"
-                            onClick={handleSendOtp}
-                            isDisabled={!selectedFromLocation || !selectedToLocation || !hours || Number(hours) < 1 || !mobileNumber}
-                        >
+                        <Button colorScheme="teal" size="lg" onClick={handleSendOtp}>
                             Send OTP
                         </Button>
 
                         {isOtpSent && (
                             <>
-                                <Text fontSize="md" color="gray.600" mt={4}>
-                                    Enter OTP:
-                                </Text>
                                 <Input
                                     placeholder="Enter OTP"
                                     value={otp}
                                     onChange={(e) => setOtp(e.target.value)}
                                     focusBorderColor="teal.400"
                                 />
-                                <Button
-                                    colorScheme="teal"
-                                    size="lg"
-                                    w="full"
-                                    mt={4}
-                                    onClick={handleOtpVerification}
-                                >
+                                <Button colorScheme="teal" size="lg" onClick={handleOtpVerification}>
                                     Verify OTP
                                 </Button>
                             </>
                         )}
                     </VStack>
                 </VStack>
+
+                {paymentProcessed && (
+                    <Button colorScheme="teal" size="lg" mt={6} onClick={handlePayment}>
+                        Proceed to Payment
+                    </Button>
+                )}
             </Box>
-
-            {/* Bank Details Modal */}
-            <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
-                <ModalOverlay />
-                <ModalContent>
-                    <ModalHeader>Enter Your Bank Details</ModalHeader>
-                    <ModalCloseButton />
-                    <ModalBody>
-                        <VStack spacing={4} align="stretch">
-                            <Input
-                                placeholder="Account Number"
-                                value={bankDetails.accountNumber}
-                                onChange={(e) => handleInputChange(e, 'accountNumber')}
-                            />
-                            <Input
-                                placeholder="IFSC Code"
-                                value={bankDetails.ifscCode}
-                                onChange={(e) => handleInputChange(e, 'ifscCode')}
-                            />
-                            <Input
-                                placeholder="Bank Name"
-                                value={bankDetails.bankName}
-                                onChange={(e) => handleInputChange(e, 'bankName')}
-                            />
-                        </VStack>
-                    </ModalBody>
-
-                    <ModalFooter>
-                        <Button variant="ghost" onClick={() => setShowModal(false)}>
-                            Close
-                        </Button>
-                        {/* <Button
-                            colorScheme="teal"
-                            ml={3}
-                            onClick={handleFakePayment}
-                            isLoading={paymentProcessed}
-                            isDisabled={paymentProcessed}
-                        >
-                            Confirm Payment
-                        </Button> */}
-
-                        <GooglePayButton
-                            environment="TEST"
-                            paymentRequest={{
-                                apiVersion: 2,
-                                apiVersionMinor: 0,
-                                allowedPaymentMethods: [
-                                    {
-                                        type: 'CARD',
-                                        parameters: {
-                                            allowedAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'],
-                                            allowedCardNetworks: ['MASTERCARD', 'VISA'],
-                                        },
-                                        tokenizationSpecification: {
-                                            type: 'PAYMENT_GATEWAY',
-                                            parameters: {
-                                                gateway: 'example',
-                                                gatewayMerchantId: 'exampleGatewayMerchantId',
-                                            },
-                                        },
-                                    },
-                                ],
-                                merchantInfo: {
-                                    merchantId: '12345678901234567890',
-                                    merchantName: 'Demo Merchant',
-                                },
-                                transactionInfo: {
-                                    totalPriceStatus: 'FINAL',
-                                    totalPriceLabel: 'Total',
-                                    totalPrice: `${totalPrice}`,
-                                    currencyCode: 'INR',
-                                    countryCode: 'IN',
-                                },
-                            }}
-                            onLoadPaymentData={paymentRequest => {
-                                console.log('load payment data', paymentRequest);
-                            }}
-                        />
-                    </ModalFooter>
-                </ModalContent>
-            </Modal>
         </Box>
     );
 };
 
 export default Renting;
+
+
+
