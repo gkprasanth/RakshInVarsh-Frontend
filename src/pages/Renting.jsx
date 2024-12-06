@@ -8,8 +8,8 @@ import {
     useToast,
     Input,
     Divider,
+    Select,
 } from "@chakra-ui/react";
-import DropDown from "./DropDown"; // Ensure DropDown is correctly implemented
 
 const optionsFrom = [
     { label: "Block 1", value: "block_1" },
@@ -27,22 +27,21 @@ const optionsTo = [
     { label: "Gate 2", value: "gate_2" },
 ];
 
-const RENTAL_PRICE_PER_HOUR = 10;
+const RENTAL_PRICE_PER_HOUR = 100;
 
 const Renting = () => {
     const [currentLocation] = useState("Block 1");
-    const [selectedFromLocation, setSelectedFromLocation] = useState("");
-    const [selectedToLocation, setSelectedToLocation] = useState("");
+    const [selectedFromLocation, setSelectedFromLocation] = useState(optionsFrom[0].value); // Default to first option
+    const [selectedToLocation, setSelectedToLocation] = useState(optionsTo[0].value); // Default to first option
     const [hours, setHours] = useState("");
     const [otp, setOtp] = useState("");
     const [generatedOtp, setGeneratedOtp] = useState("");
     const [mobileNumber, setMobileNumber] = useState("");
     const [isOtpSent, setOtpSent] = useState(false);
-    const [totalPrice, setTotalPrice] = useState(0);
+    const [amount, setAmount] = useState(0);
     const [paymentProcessed, setPaymentProcessed] = useState(false);
 
     const toast = useToast();
-
 
     useEffect(() => {
         const script = document.createElement("script");
@@ -64,16 +63,12 @@ const Renting = () => {
         };
     }, []);
 
-
-
-    const amount = 500;
     const currency = "INR";
     const receiptId = "qwsaq1";
 
-
     useEffect(() => {
         if (hours) {
-            setTotalPrice(hours * RENTAL_PRICE_PER_HOUR);
+            setAmount(hours * RENTAL_PRICE_PER_HOUR);
         }
     }, [hours]);
 
@@ -83,7 +78,7 @@ const Renting = () => {
             setHours(Number(value));
         } else {
             setHours("");
-            setTotalPrice(0);
+            setAmount(0);
         }
     };
 
@@ -94,34 +89,159 @@ const Renting = () => {
 
     const generateOtp = () => Math.floor(1000 + Math.random() * 9000).toString();
 
-    const handleSendOtp = () => {
-        if (
-            !selectedFromLocation ||
-            !selectedToLocation ||
-            !hours ||
-            !validateMobileNumber(mobileNumber)
-        ) {
+    const handlePayment = async (e) => {
+        try {
+            console.log("Selected From Location:", selectedFromLocation);
+            console.log("Selected To Location:", selectedToLocation);
+            console.log("Hours:", hours);
+            console.log("Mobile Number:", mobileNumber);
+    
+            if (!selectedFromLocation || !selectedToLocation || !hours || !validateMobileNumber(mobileNumber)) {
+                toast({
+                    title: "Error",
+                    description: "Please fill out all fields correctly.",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                });
+                return;
+            }
+    
+            // Fetch order details from the server
+            const response = await fetch("https://rakshinvarsh-backend.onrender.com/order", {
+                method: "POST",
+                body: JSON.stringify({
+                    amount: amount * 100,  // Replace with your amount variable
+                    currency,  // Replace with your currency variable
+                    receipt: receiptId,  // Replace with your receiptId variable
+                }),
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+    
+            if (!response.ok) {
+                toast({
+                    title: "Error",
+                    description: "Failed to initiate payment. Please try again.",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                });
+                return;
+            }
+    
+            const order = await response.json();
+            console.log(order);
+
+
+
+            const sendOtp = async () => {
+                if (!validateMobileNumber(mobileNumber)) {
+                  toast({
+                    title: "Error",
+                    description: "Please enter a valid mobile number.",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                  });
+                  return;
+                }
+            
+                try {
+                  // Send OTP request to backend
+                  const response = await fetch('https://rakshinvarsh-backend.onrender.com/api/sendOtp', { 
+                    method: 'POST', 
+                    body: JSON.stringify({ mobileNumber }),
+                    headers: { 'Content-Type': 'application/json' }
+                  });
+            
+                  if (!response.ok) {
+                    toast({
+                      title: "Error",
+                      description: "Failed to send OTP. Please try again.",
+                      status: "error",
+                      duration: 5000,
+                      isClosable: true,
+                    });
+                    return;
+                  }
+            
+                  const data = await response.json();
+                  setGeneratedOtp(data.otp); // Assume your backend sends back the OTP
+                  setOtpSent(true); // Show OTP verification input
+                  toast({
+                    title: "Success",
+                    description: "OTP sent successfully.",
+                    status: "success",
+                    duration: 5000,
+                    isClosable: true,
+                  });
+            
+                } catch (error) {
+                  console.error("Error sending OTP:", error);
+                  toast({
+                    title: "Error",
+                    description: "An error occurred while sending OTP.",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                  });
+                }
+              };
+            
+    
+            // Razorpay payment processing...
+            const options = {
+                key: "rzp_test_6Q8fYAxMWNjmHG", // Replace with your Razorpay key
+                amount: amount * 100, // Convert amount to paise (1 INR = 100 paise)
+                currency,
+                name: "RakshInVarsh", // Your business name
+                description: "Test Transaction",
+                image: "/logo.png", // Replace with your logo URL
+                order_id: order.id, // Order ID from backend
+                handler: async function (response) {
+                    // Handle payment success
+                    console.log("Payment Successful:", response);
+                    sendOtp()
+                    // Show success toast
+                    toast({
+                        title: "Success",
+                        description: "Your payment was successful!, Your OTP",
+                        status: "success",
+                        duration: 5000,
+                        isClosable: true,
+                    });
+                    setPaymentProcessed(true);
+                },
+                prefill: {
+                    name: "Rahul Sohan", // Replace with customer's name
+                    email: "nonygundi33@gmail.com", // Replace with customer's email
+                    contact: mobileNumber, // Use the entered mobile number
+                },
+                notes: {
+                    address: "RakshInVarsh",
+                },
+                theme: {
+                    color: "#3399cc", // Theme color
+                },
+            };
+    
+            const rzp1 = new window.Razorpay(options);
+            rzp1.open();
+            e.preventDefault();
+        } catch (error) {
+            console.error("Error initiating payment:", error);
             toast({
                 title: "Error",
-                description: "Please fill out all fields correctly.",
+                description: "An error occurred while initiating payment.",
                 status: "error",
                 duration: 5000,
                 isClosable: true,
             });
-            return;
         }
-
-        const otp = generateOtp();
-        setGeneratedOtp(otp);
-        setOtpSent(true);
-        toast({
-            title: "OTP Sent",
-            description: `Your OTP is ${otp}`, // Only for demo
-            status: "success",
-            duration: 5000,
-            isClosable: true,
-        });
     };
+    
 
     const handleOtpVerification = () => {
         if (otp === generatedOtp) {
@@ -145,142 +265,6 @@ const Renting = () => {
             });
         }
     };
-
-    const handlePayment = async (e) => {
-        try {
-            // Ensure paymentProcessed flag is checked before proceeding
-            if (!paymentProcessed) {
-                toast({
-                    title: "Error",
-                    description: "Please verify OTP before proceeding.",
-                    status: "error",
-                    duration: 5000,
-                    isClosable: true,
-                });
-                return;
-            }
-
-            // Fetch order details from the server
-            const response = await fetch("http://localhost:5000/order", {
-                method: "POST",
-                body: JSON.stringify({
-                    amount,  // Replace with your amount variable
-                    currency,  // Replace with your currency variable
-                    receipt: receiptId,  // Replace with your receiptId variable
-                }),
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            });
-
-            if (!response.ok) {
-                toast({
-                    title: "Error",
-                    description: "Failed to initiate payment. Please try again.",
-                    status: "error",
-                    duration: 5000,
-                    isClosable: true,
-                });
-                return;
-            }
-
-            const order = await response.json();
-            console.log(order);
-
-            // Configure Razorpay options
-            const options = {
-                key: "rzp_test_6Q8fYAxMWNjmHG", // Replace with your Razorpay key
-                amount, // Amount is in currency subunits
-                currency,
-                name: "Acme Corp", // Your business name
-                description: "Test Transaction",
-                image: "/logo.png", // Replace with your logo URL
-                order_id: order.id, // Order ID from backend
-                handler: async function (response) {
-                    try {
-                        const body = { ...response };
-
-                        const validateRes = await fetch(
-                            "http://localhost:5000/order/validate",
-                            {
-                                method: "POST",
-                                body: JSON.stringify(body),
-                                headers: {
-                                    "Content-Type": "application/json",
-                                },
-                            }
-                        );
-
-                        const jsonRes = await validateRes.json();
-
-                        if (validateRes.ok) {
-                            toast({
-                                title: "Payment Successful",
-                                description: "Transaction completed successfully.",
-                                status: "success",
-                                duration: 5000,
-                                isClosable: true,
-                            });
-                            console.log("Validation response:", jsonRes);
-                        } else {
-                            toast({
-                                title: "Error",
-                                description: "Payment validation failed. Please contact support.",
-                                status: "error",
-                                duration: 5000,
-                                isClosable: true,
-                            });
-                        }
-                    } catch (error) {
-                        console.error("Error validating payment:", error);
-                        toast({
-                            title: "Error",
-                            description: "An error occurred during payment validation.",
-                            status: "error",
-                            duration: 5000,
-                            isClosable: true,
-                        });
-                    }
-                },
-                prefill: {
-                    name: "Web Dev Matrix", // Replace with customer's name
-                    email: "webdevmatrix@example.com", // Replace with customer's email
-                    contact: "9000000000", // Replace with customer's phone number
-                },
-                notes: {
-                    address: "Razorpay Corporate Office",
-                },
-                theme: {
-                    color: "#3399cc", // Theme color
-                },
-            };
-
-            const rzp1 = new window.Razorpay(options);
-            rzp1.on("payment.failed", function (response) {
-                console.error("Payment failed:", response);
-                toast({
-                    title: "Payment Failed",
-                    description: response.error.description || "An unknown error occurred.",
-                    status: "error",
-                    duration: 5000,
-                    isClosable: true,
-                });
-            });
-
-            rzp1.open();
-            e.preventDefault();
-        } catch (error) {
-            console.error("Error initiating payment:", error);
-            toast({
-                title: "Error",
-                description: "An error occurred while initiating payment.",
-                status: "error",
-                duration: 5000,
-                isClosable: true,
-            });
-        }
-    };
-
 
     return (
         <Box
@@ -310,91 +294,90 @@ const Renting = () => {
                         <Text fontSize="md" color="gray.600" mb={2}>
                             Current Umbrella Location:
                         </Text>
-                        <Text fontSize="lg" fontWeight="bold" color="teal.500">
+                        <Text fontSize="xl" fontWeight="bold" color="gray.800">
                             {currentLocation}
                         </Text>
                     </Box>
 
-                    <Divider />
+                    <DropDown
+                        label="From Location"
+                        options={optionsFrom}
+                        onSelect={setSelectedFromLocation}
+                    />
+                    <DropDown
+                        label="To Location"
+                        options={optionsTo}
+                        onSelect={setSelectedToLocation}
+                    />
 
-                    <Box textAlign="left">
+                    <Box>
                         <Text fontSize="md" color="gray.600" mb={2}>
-                            Select Pickup Location:
+                            Duration (Hours):
                         </Text>
-                        <DropDown
-                            placeholder="Pickup Location"
-                            options={optionsFrom}
-                            onChange={(e) => setSelectedFromLocation(e.target.value)}
-                        />
-                    </Box>
-
-                    <Divider />
-
-                    <Box textAlign="left">
-                        <Text fontSize="md" color="gray.600" mb={2}>
-                            Select Drop-off Location:
-                        </Text>
-                        <DropDown
-                            placeholder="Drop-off Location"
-                            options={optionsTo}
-                            onChange={(e) => setSelectedToLocation(e.target.value)}
-                        />
-                    </Box>
-
-                    <Divider />
-
-                    <VStack spacing={4} align="stretch" mt={4}>
                         <Input
-                            placeholder="Number of hours"
+                            type="number"
                             value={hours}
                             onChange={handleHoursChange}
-                            type="number"
+                            placeholder="Enter hours"
                             min={1}
-                            focusBorderColor="teal.400"
                         />
-                        {hours && (
-                            <Text fontSize="lg" color="teal.500" fontWeight="bold">
-                                Total Price: ₹{totalPrice}
-                            </Text>
-                        )}
+                    </Box>
+
+                    <Box>
+                        <Text fontSize="md" color="gray.600" mb={2}>
+                            Mobile Number:
+                        </Text>
                         <Input
-                            placeholder="Mobile Number"
+                            type="tel"
                             value={mobileNumber}
                             onChange={(e) => setMobileNumber(e.target.value)}
-                            type="tel"
-                            focusBorderColor="teal.400"
+                            placeholder="Enter mobile number"
                         />
-                        <Button colorScheme="teal" size="lg" onClick={handleSendOtp}>
-                            Send OTP
-                        </Button>
+                    </Box>
 
-                        {isOtpSent && (
-                            <>
+                    {isOtpSent && (
+                        <>
+                            <Box>
+                                <Text fontSize="md" color="gray.600" mb={2}>
+                                    Enter OTP:
+                                </Text>
                                 <Input
-                                    placeholder="Enter OTP"
+                                    type="text"
                                     value={otp}
                                     onChange={(e) => setOtp(e.target.value)}
-                                    focusBorderColor="teal.400"
+                                    placeholder="Enter OTP"
                                 />
-                                <Button colorScheme="teal" size="lg" onClick={handleOtpVerification}>
-                                    Verify OTP
-                                </Button>
-                            </>
-                        )}
-                    </VStack>
-                </VStack>
+                            </Box>
+                            <Button colorScheme="teal" onClick={handleOtpVerification}>
+                                Verify OTP
+                            </Button>
+                        </>
+                    )}
 
-                {paymentProcessed && (
-                    <Button colorScheme="teal" size="lg" mt={6} onClick={handlePayment}>
-                        Proceed to Payment
-                    </Button>
-                )}
+                    {!isOtpSent && (
+                        <Button colorScheme="teal" onClick={handlePayment}>
+                            Confirm and Pay {amount > 0 ? `₹${amount}` : ""}
+                        </Button>
+                    )}
+                </VStack>
             </Box>
         </Box>
     );
 };
 
+const DropDown = ({ label, options, onSelect }) => (
+    <Box>
+        <Text fontSize="md" color="gray.600" mb={2}>
+            {label}:
+        </Text>
+        <Select onChange={(e) => onSelect(e.target.value)}>
+            {options.map((option) => (
+                <option key={option.value} value={option.value}>
+                    {option.label}
+                </option>
+            ))}
+        </Select>
+    </Box>
+);
+
 export default Renting;
-
-
-

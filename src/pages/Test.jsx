@@ -8,7 +8,7 @@ function Test() {
     const receiptId = '1234567890';
 
     // Step 1: Create order in your server
-    const response = await fetch('http://localhost:5000/order', {
+    const response = await fetch('https://rakshinvarsh-backend.onrender.com/order', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ function Test() {
         const body = { ...response };
 
         // Step 3: Validate payment with your server
-        const validateResponse = await fetch('http://localhost:5000/validate', {
+        const validateResponse = await fetch('https://rakshinvarsh-backend.onrender.com/validate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
